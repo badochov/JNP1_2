@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstring>
 #include <cassert>
+#include <optional>
 #ifdef NDEBUG
 constexpr bool DEBUG = false;
 #else
@@ -11,8 +12,14 @@ constexpr bool DEBUG = true;
 #define print_debug(v) if(DEBUG) std::cerr<<v;
 
 namespace {
-std::string encode(const char *value, const char *key) {
-  assert(value);
+bool is_value_valid(const char* value){
+  return value != nullptr;
+}
+
+std::optional<std::string> encode(const char *value, const char *key) {
+  if(!is_value_valid(value)){
+    return {};
+  }
   std::string encoded(value);
   if (key) {
     const size_t key_len = strlen(key);
