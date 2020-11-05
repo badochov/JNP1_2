@@ -3,6 +3,8 @@
 #include <cstring>
 #include <cassert>
 #include <optional>
+#include <unordered_set>
+#include <unordered_map>
 
 #ifdef NDEBUG
 constexpr bool DEBUG = false;
@@ -10,15 +12,15 @@ constexpr bool DEBUG = false;
 constexpr bool DEBUG = true;
 #endif
 
-#define print_debug(v) if(DEBUG) std::cerr<<v;
+#define print_debug(v) if(DEBUG) std::cerr<<v
 
 namespace {
 
-    inline string val(const char* x) {
+    inline std::string val(const char* x) {
         if (x == nullptr) {
             return "NULL";
         } else {
-            cerr << "\"" << x << "\"";
+            std::cerr << "\"" << x << "\"";
             return "";
         }
     }
@@ -46,12 +48,12 @@ namespace {
 
 namespace jnp1 {
 
-    unordered_map<unsigned long, unordered_set<string>> sets;
+    std::unordered_map<unsigned long, std::unordered_set<std::string>> sets;
     unsigned long next_id = 0;
 
     unsigned long encstrset_new() {
         print_debug(__func__ << "()\n");
-        unordered_set<string> new_set;
+        std::unordered_set<std::string> new_set;
         sets.insert({next_id, new_set});
         ++next_id;
         print_debug(__func__ << ": set #" << next_id - 1 << " created\n");
@@ -70,7 +72,7 @@ namespace jnp1 {
             size_t size = sets.at(id).size();
             print_debug(__func__ << ": set #" << id << " contains " << size << " element(s)\n");
             return size;
-        } catch (const out_of_range& e) {
+        } catch (const std::out_of_range& e) {
             print_debug(__func__ << ": set #" << id << " does not exist\n");
             return 0;
         }
@@ -78,16 +80,17 @@ namespace jnp1 {
 
     bool encstrset_insert(unsigned long id, const char* value, const char* key) {
         print_debug(__func__ << "(" << id << ", " << val(value) << ", " << val(key) << ")\n");
-        string encrypted_text = encode(value, key);
+        std::string encrypted_text = encode(value, key).value_or("NULL");
         try {
             bool inserted = sets.at(id).insert(encrypted_text).second;
+            print_debug(__func__ << ": set #" << id << ", cypher \"" << encrypted_text << "\"");
             if (inserted) {
-                print_debug(__func__ << ": set #" << id << ", cypher \"" << encrypted_text << "\" inserted\n");
+                 print_debug(" inserted\n");
             } else {
-                print_debug(__func__ << ": set #" << id << ", cypher \"" << encrypted_text << "\" was already present\n");
+                print_debug(" was already present\n");
             }
             return inserted;
-        } catch (const out_of_range& e) {
+        } catch (const std::out_of_range& e) {
             print_debug(__func__ << ": set #" << id << " does not exist\n");
             return false;
         }
@@ -95,7 +98,7 @@ namespace jnp1 {
 
     bool encstrset_remove(unsigned long id, const char* value, const char* key) {
         print_debug(__func__ << "(" << id << ", " << val(value) << ", " << val(key) << ")\n");
-        string encrypted_text = encode(value, key);
+        std::string encrypted_text = encode(value, key).value_or("NULL");
         try {
             bool removed = sets.at(id).erase(encrypted_text) > 0;
             if (removed) {
@@ -104,7 +107,7 @@ namespace jnp1 {
                 print_debug(__func__ << ": set #" << id << ", cypher \"" << encrypted_text << "\" was not present\n");
             }
             return removed;
-        } catch (const out_of_range& e) {
+        } catch (const std::out_of_range& e) {
             print_debug(__func__ << ": set #" << id << " does not exist\n");
             return false;
         }
@@ -112,9 +115,9 @@ namespace jnp1 {
 
     bool encstrset_test(unsigned long id, const char* value, const char* key) {
         print_debug(__func__ << "(" << id << ", " << val(value) << ", " << val(key) << ")\n");
-        string encrypted_text = encode(value, key);
+        std::string encrypted_text = encode(value, key).value_or("NULL");
         try {
-            unordered_set<string> set = sets.at(id);
+            std::unordered_set<std::string> set = sets.at(id);
             bool present = set.find(encrypted_text) != set.end();
             if (present) {
                 print_debug(__func__ << ": set #" << id << ", cypher \"" << encrypted_text << "\" is present\n");
@@ -122,7 +125,7 @@ namespace jnp1 {
                 print_debug(__func__ << ": set #" << id << ", cypher \"" << encrypted_text << "\" is not present\n");
             }
             return present;
-        } catch (const out_of_range& e) {
+        } catch (const std::out_of_range& e) {
             print_debug(__func__ << ": set #" << id << " does not exist\n");
             return false;
         }
@@ -133,7 +136,7 @@ namespace jnp1 {
         try {
             sets.at(id).clear();
             print_debug(__func__ << ": set #" << id << " cleared\n");
-        } catch (const out_of_range& e) {
+        } catch (const std::out_of_range& e) {
             print_debug(__func__ << ": set #" << id << " does not exist\n");
         }
     }
@@ -143,7 +146,7 @@ namespace jnp1 {
         auto src_set = sets.find(src_id);
         auto dst_set = sets.find(dst_id);
         if (src_set != sets.end() && dst_set != sets.end()) {
-            for (const string& s : (*src_set).second) {
+            for (const std::string& s : (*src_set).second) {
                 bool inserted = (*dst_set).second.insert(s).second;
                 if (inserted) {
                     print_debug(__func__ << ": cypher \"" << s << "\" copied from set #" << src_id << " to set #" << dst_id << "\n");
