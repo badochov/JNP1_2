@@ -8,8 +8,8 @@
 extern "C" {
 namespace jnp1 {
 #else
-#include <stdlib.c>
-#include <stdbool.c>
+#include <stdlib.h>
+#include <stdbool.h>
 #endif
 
 // Tworzy nowy zbiór i zwraca jego identyfikator.
