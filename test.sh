@@ -76,9 +76,6 @@ function run_test() {
             diff -d "$error_file" "$temp_err"
 
 
-  echo "!!!!!!!!!!!!!!!!!!!"
-  cat "$temp_err"
-  echo "!!!!!!!!!!!!!!!!!!!"
         fi
 
     else

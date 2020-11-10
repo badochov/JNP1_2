@@ -3,13 +3,15 @@
 
 #ifdef __cplusplus
 
-#include <cstdlib>
+#include <cstddef>
+#ifndef NDEBUG
 #include <iostream>
+#endif
 
 extern "C" {
 namespace jnp1 {
 #else
-#include <stdlib.h>
+#include <stddef.h>
 #include <stdbool.h>
 #endif
 
