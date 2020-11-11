@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <cstring>
 #include <optional>
+#include <cassert>
+#include <limits>
 #include <unordered_set>
 #include <unordered_map>
 
@@ -14,18 +16,25 @@ namespace {
 #endif
 
 #define print_debug(v) if(DEBUG) std::cerr << v
-#define print_cypher(s) print_debug(__func__ << ": set #" << id << ", cypher \""); \
-                        print_cypher_helper(s);  \
-                        print_debug('"');
-#define print_not_exists(id) print_debug(__func__ << ": set #" << id << " does not exist"<<std::endl);
+#define print_cypher(s) print_debug(__func__ << ": set #" << id << ", cypher \""<<cypher_string(s)<<'"')
+#define print_not_exists(id) print_debug(__func__ << ": set #" << id << " does not exist"<<std::endl)
 #define print_func_entrance() print_debug(__func__ << "("<<id<<")"<<std::endl)
-#define print_key_val_func_entrance() print_debug(__func__ << "(" << id << ", " << val(value) << ", "\
-                                                        << val(key) << ")"<<std::endl)
-#define print_invalid_value() print_debug(__func__ << ": invalid value (NULL)" << std::endl);
+#define print_key_val_func_entrance() print_debug(__func__ << "(" << id << ", " \
+                                                    << get_string_for_debug(value) << ", " \
+                                                    << get_string_for_debug(key) << ")"<<std::endl)
+#define print_invalid_value() print_debug(__func__ << ": invalid value (NULL)" << std::endl)
+#define print_copy_new_element_message() print_debug(__func__ << ": cypher \"" << cypher_string(s) \
+                                                        <<"\" copied from set #" << src_id \
+                                                        << " to set #" << dst_id << "" << std::endl)
+
+#define print_copy_present_element_message() print_debug(__func__ << ": copied cypher \"" \
+                                                            << cypher_string(s) \
+                                                            <<"\" was already present in set #" \
+                                                            << dst_id << "" << std::endl)
     using encset = std::unordered_set<std::string>;
     using encsetmap = std::unordered_map<unsigned long, std::unordered_set<std::string>>;
 
-    inline std::string val(const char *x) {
+    inline std::string get_string_for_debug(const char *x) {
         if (x == nullptr) {
             return "NULL";
         } else {
@@ -33,16 +42,16 @@ namespace {
         }
     }
 
-    inline void print_cypher_helper(const std::string &s) {
-        if (s.empty()) {
-            return;
-        }
-        std::ostringstream builder;
+    inline std::string cypher_string(const std::string &s) {
+        std::stringstream builder;
+        builder << std::hex;
         for (size_t i = 0; i < s.size(); i++) {
             char c = s[i];
-            print_debug(std::hex << std::setfill('0') << std::setw(2) << std::uppercase << unsigned(c)
-                                 << ((i == s.size() - 1) ? "" : " "));
+            builder << std::setfill('0') << std::setw(2) << std::uppercase << unsigned(c)
+                    << ((i == s.size() - 1) ? "" : " ");
         }
+        builder << std::dec;
+        return builder.str();
     }
 
     inline bool is_value_valid(const char *value) {
@@ -79,6 +88,7 @@ namespace {
 
 namespace jnp1 {
     unsigned long encstrset_new() {
+        assert(next_id != std::numeric_limits<unsigned long>::max());
         print_debug(__func__ << "()" << std::endl);
         encset new_set;
         get_sets()[next_id] = new_set;
@@ -113,17 +123,17 @@ namespace jnp1 {
 
     bool encstrset_insert(unsigned long id, const char *value, const char *key) {
         print_key_val_func_entrance();
+        auto search = get_sets().find(id);
+        if (not_exist(search)) {
+            print_not_exists(id);
+            return false;
+        }
         std::optional<std::string> encrypted_text = encode(value, key);
         if (!encrypted_text.has_value()) {
             print_invalid_value();
             return false;
         }
-        auto search = get_sets().find(id);
-        if (not_exist(search)) {
 
-            print_not_exists(id);
-            return false;
-        }
         bool inserted = search->second.insert(encrypted_text.value()).second;
         print_cypher(encrypted_text.value());
         if (inserted) {
@@ -136,17 +146,19 @@ namespace jnp1 {
 
     bool encstrset_remove(unsigned long id, const char *value, const char *key) {
         print_key_val_func_entrance();
-        std::optional<std::string> encrypted_text = encode(value, key);
-        if (!encrypted_text.has_value()) {
-            print_invalid_value();
-            return false;
-        }
         auto search = get_sets().find(id);
         if (not_exist(search)) {
 
             print_not_exists(id);
             return false;
         }
+
+        std::optional<std::string> encrypted_text = encode(value, key);
+        if (!encrypted_text.has_value()) {
+            print_invalid_value();
+            return false;
+        }
+
         bool removed = search->second.erase(encrypted_text.value()) > 0;
         print_cypher(encrypted_text.value());
         if (removed) {
@@ -160,13 +172,13 @@ namespace jnp1 {
     bool encstrset_test(unsigned long id, const char *value, const char *key) {
         print_key_val_func_entrance();
         std::optional<std::string> encrypted_text = encode(value, key);
-        if (!encrypted_text.has_value()) {
-            print_invalid_value();
-            return false;
-        }
         auto search = get_sets().find(id);
         if (not_exist(search)) {
             print_not_exists(id);
+            return false;
+        }
+        if (!encrypted_text.has_value()) {
+            print_invalid_value();
             return false;
         }
         bool present = search->second.find(encrypted_text.value()) != search->second.end();
@@ -205,14 +217,10 @@ namespace jnp1 {
         for (const std::string &s : src_search->second) {
             bool inserted = dst_search->second.insert(s).second;
             if (inserted) {
-                print_debug(__func__ << ": cypher \"");
-                print_cypher_helper(s);
-                print_debug("\" copied from set #" << src_id
-                                                   << " to set #" << dst_id << "" << std::endl);
+                print_copy_new_element_message();
             } else {
-                print_debug(__func__ << ": copied cypher \"");
-                print_cypher_helper(s);
-                print_debug("\" was already present in set #" << dst_id << "" << std::endl);
+                print_copy_present_element_message();
+
             }
         }
     }
