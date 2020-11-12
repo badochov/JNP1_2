@@ -74,7 +74,7 @@ function run_test() {
         else
             echo -ne "${RED}stderr nieprawidlowe${NOCOLOR}\n"
             diff -d "$error_file" "$temp_err"
-
+#            cat "$temp_err"
 
         fi
 

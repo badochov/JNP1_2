@@ -2,7 +2,6 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
-#include <optional>
 #include <cassert>
 #include <limits>
 #include <unordered_set>
@@ -41,13 +40,13 @@ namespace {
             return '"' + std::string(x) + '"';
         }
     }
-
+    // Funkcja szyfrująca stringa przed wypisaniem.
     inline std::string cypher_string(const std::string &s) {
         std::stringstream builder;
         builder << std::hex;
         for (size_t i = 0; i < s.size(); i++) {
             char c = s[i];
-            builder << std::setfill('0') << std::setw(2) << std::uppercase << unsigned(c)
+            builder << std::setfill('0') << std::setw(2) << std::uppercase << unsigned((unsigned char)c)
                     << ((i == s.size() - 1) ? "" : " ");
         }
         builder << std::dec;
@@ -57,8 +56,9 @@ namespace {
     inline bool is_value_valid(const char *value) {
         return value != nullptr;
     }
-
-    std::optional<std::string> encode(const char *value, const char *key) {
+    
+    // Funckja szyfrująca stringa zakłada, że value nie jest nullptr.
+    std::string encode(const char *value, const char *key) {
         if (!is_value_valid(value)) {
             return {};
         }
@@ -123,19 +123,21 @@ namespace jnp1 {
 
     bool encstrset_insert(unsigned long id, const char *value, const char *key) {
         print_key_val_func_entrance();
+        if (!is_value_valid(value)) {
+            print_invalid_value();
+            return false;
+        }
+
         auto search = get_sets().find(id);
         if (not_exist(search)) {
             print_not_exists(id);
             return false;
         }
-        std::optional<std::string> encrypted_text = encode(value, key);
-        if (!encrypted_text.has_value()) {
-            print_invalid_value();
-            return false;
-        }
 
-        bool inserted = search->second.insert(encrypted_text.value()).second;
-        print_cypher(encrypted_text.value());
+        std::string encrypted_text = encode(value, key);
+
+        bool inserted = search->second.insert(encrypted_text).second;
+        print_cypher(encrypted_text);
         if (inserted) {
             print_debug(" inserted" << std::endl);
         } else {
@@ -146,21 +148,22 @@ namespace jnp1 {
 
     bool encstrset_remove(unsigned long id, const char *value, const char *key) {
         print_key_val_func_entrance();
-        auto search = get_sets().find(id);
-        if (not_exist(search)) {
 
-            print_not_exists(id);
-            return false;
-        }
-
-        std::optional<std::string> encrypted_text = encode(value, key);
-        if (!encrypted_text.has_value()) {
+        if (!is_value_valid(value)) {
             print_invalid_value();
             return false;
         }
 
-        bool removed = search->second.erase(encrypted_text.value()) > 0;
-        print_cypher(encrypted_text.value());
+        auto search = get_sets().find(id);
+        if (not_exist(search)) {
+            print_not_exists(id);
+            return false;
+        }
+
+        std::string encrypted_text = encode(value, key);
+
+        bool removed = search->second.erase(encrypted_text) > 0;
+        print_cypher(encrypted_text);
         if (removed) {
             print_debug(" removed" << std::endl);
         } else {
@@ -171,18 +174,21 @@ namespace jnp1 {
 
     bool encstrset_test(unsigned long id, const char *value, const char *key) {
         print_key_val_func_entrance();
-        std::optional<std::string> encrypted_text = encode(value, key);
+
+        if (!is_value_valid(value)) {
+            print_invalid_value();
+            return false;
+        }
         auto search = get_sets().find(id);
         if (not_exist(search)) {
             print_not_exists(id);
             return false;
         }
-        if (!encrypted_text.has_value()) {
-            print_invalid_value();
-            return false;
-        }
-        bool present = search->second.find(encrypted_text.value()) != search->second.end();
-        print_cypher(encrypted_text.value());
+
+        std::string encrypted_text = encode(value, key);
+
+        bool present = search->second.find(encrypted_text) != search->second.end();
+        print_cypher(encrypted_text);
         if (present) {
             print_debug(" is present" << std::endl);
         } else {
@@ -220,7 +226,6 @@ namespace jnp1 {
                 print_copy_new_element_message();
             } else {
                 print_copy_present_element_message();
-
             }
         }
     }
