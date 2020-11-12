@@ -42,7 +42,7 @@ namespace {
     }
     // Funkcja szyfrująca stringa przed wypisaniem.
     inline std::string cypher_string(const std::string &s) {
-        std::stringstream builder;
+        std::ostringstream builder;
         builder << std::hex;
         for (size_t i = 0; i < s.size(); i++) {
             char c = s[i];
