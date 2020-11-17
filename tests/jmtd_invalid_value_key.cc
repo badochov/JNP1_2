@@ -12,6 +12,7 @@ using namespace ::jnp1;
 
 int main() {
     const unsigned int id = encstrset_new();
+    const unsigned int not_id = id + 1;
 
     assert(NOT encstrset_remove(id, nullptr, nullptr));
     assert(NOT encstrset_test(id, nullptr, nullptr));
@@ -20,6 +21,9 @@ int main() {
     assert(NOT encstrset_remove(id, nullptr, ""));
     assert(NOT encstrset_test(id, nullptr, ""));
     assert(NOT encstrset_insert(id, nullptr, ""));
+    assert(NOT encstrset_remove(not_id, nullptr, ""));
+    assert(NOT encstrset_test(not_id, nullptr, ""));
+    assert(NOT encstrset_insert(not_id, nullptr, ""));
 
     assert(NOT encstrset_remove(id, "", nullptr));
     assert(NOT encstrset_test(id, "", nullptr));
